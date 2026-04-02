@@ -1,0 +1,7 @@
+{
+  "target": "http://127.0.0.1:8765/",
+  "pages_scanned": 1,
+  "xss_findings": [],
+  "sqli_findings": [],
+  "csrf_findings": []
+}

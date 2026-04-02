@@ -1,0 +1,47 @@
+{
+  "target": "http://127.0.0.1:8765/",
+  "pages_scanned": 1,
+  "xss_findings": [
+    {
+      "url": "http://127.0.0.1:8765/submit",
+      "method": "POST",
+      "param": "q",
+      "payload": "<script>alert(1)</script>",
+      "payload_name": "html_script_tag",
+      "reflected_as": "raw",
+      "reflection_mode": "raw",
+      "confidence": "high",
+      "status_code": 200,
+      "reflection_locations": [
+        {
+          "location_type": "html_text",
+          "tag_name": null,
+          "attribute_name": null
+        }
+      ],
+      "detected_contexts": [
+        {
+          "context": "html_text",
+          "marker": "<script>alert(1)</script>",
+          "tag_name": null,
+          "attribute_name": null,
+          "quote_type": null,
+          "snippet": "<html><head></head><body><h1>Search Result</h1><div id=\"echo\"><script>alert(1)</script></div></body></html>",
+          "start_offset": 62
+        }
+      ],
+      "evidence_snippet": "[DOM confirmed] <html><head></head><body><h1>Search Result</h1><div id=\"echo\"><script>alert(1)</script></div></body></html>"
+    }
+  ],
+  "sqli_findings": [],
+  "csrf_findings": [
+    {
+      "url": "http://127.0.0.1:8765/",
+      "form_action": "http://127.0.0.1:8765/submit",
+      "method": "POST",
+      "missing_token": false,
+      "samesite_issue": false,
+      "confidence": "high"
+    }
+  ]
+}
