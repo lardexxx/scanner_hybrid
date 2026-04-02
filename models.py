@@ -1,90 +1,96 @@
-# models.py
-
 from dataclasses import dataclass
-from typing import List, Dict, Optional
-from urllib.parse import urljoin, urlparse
+from typing import Any, Dict, List, Optional
 
+from urllib.parse import urljoin
 
-# ===============================
-# Page & Crawling Models
-# ===============================
 
 @dataclass
 class InputField:
+    # Одно поле HTML-формы.
     name: str
     input_type: str
-    value: Optional[str] = None
+    value: str | List[str] | None = None
 
 
 @dataclass
 class Form:
+    # Наблюдаемая HTML-форма.
     action: str
     method: str
     inputs: List[InputField]
     source_url: str
     enctype: str = "application/x-www-form-urlencoded"
+    submit_controls: Optional[List[InputField]] = None
+    dom_index: int | None = None
+
+    def __post_init__(self):
+        if self.submit_controls is None:
+            self.submit_controls = []
 
     def absolute_action(self) -> str:
         return urljoin(self.source_url, self.action)
 
 
 @dataclass
+class ObservedRequest:
+    # Реально наблюденный HTTP-запрос, который потом можно воспроизвести.
+    source_page_url: str
+    source_kind: str
+    method: str
+    url: str
+    resource_type: Optional[str] = None
+    content_type: Optional[str] = None
+    status_code: Optional[int] = None
+    headers: Optional[Dict[str, str]] = None
+    query_params: Optional[Dict[str, List[str]]] = None
+    form_fields: Optional[Dict[str, List[str]]] = None
+    json_body: Any = None
+    raw_body: Optional[str] = None
+
+    def __post_init__(self):
+        if self.headers is None:
+            self.headers = {}
+        if self.query_params is None:
+            self.query_params = {}
+        if self.form_fields is None:
+            self.form_fields = {}
+
+
+@dataclass
+class InputPoint:
+    # Подтвержденная точка ввода в реальном запросе.
+    kind: str
+    source_page_url: str
+    request_url: str
+    method: str
+    locator: str
+    original_value: Any = None
+    source_kind: str = "unknown"
+    content_type: Optional[str] = None
+
+
+@dataclass
 class Page:
+    # Загруженная страница с артефактами discovery.
     url: str
     status_code: int
     content: str
     links: Optional[List[str]] = None
     forms: Optional[List[Form]] = None
     depth: int = 0
+    observed_requests: Optional[List[ObservedRequest]] = None
+    input_points: Optional[List[InputPoint]] = None
 
     def __post_init__(self):
         if self.links is None:
             self.links = []
         if self.forms is None:
             self.forms = []
+        if self.observed_requests is None:
+            self.observed_requests = []
+        if self.input_points is None:
+            self.input_points = []
 
-
-# ===============================
-# Reflection / XSS Models
-# ===============================
-
-@dataclass
-class ReflectionLocation:
-    location_type: str      # html_text | attr | event | script | comment
-    tag_name: Optional[str]
-    attribute_name: Optional[str]
-
-
-@dataclass
-class ReflectedContext:
-    context: str
-    marker: str
-    tag_name: Optional[str]
-    attribute_name: Optional[str]
-    quote_type: Optional[str]
-    snippet: str
-    start_offset: int
-
-
-@dataclass
-class XSSFinding:
-    url: str
-    method: str
-    param: str
-    payload: str
-    payload_name: str
-    reflected_as: str       # raw | html_escaped | js_escaped | none
-    reflection_mode: str    # raw | html_escaped | js_escaped | none
-    confidence: str         # info | low | medium | high
-    status_code: int
-    reflection_locations: List[ReflectionLocation]
-    detected_contexts: List[ReflectedContext]
-    evidence_snippet: str
-
-
-# ===============================
-# SQLi Models
-# ===============================
 
 @dataclass
 class SQLiFinding:
@@ -92,51 +98,29 @@ class SQLiFinding:
     method: str
     param: str
     payload: str
-    technique: str          # error | boolean | time
+    technique: str
     response_time: float
     evidence: str
-    confidence: str         # low | medium | high
-
-
-# ===============================
-# CSRF Models
-# ===============================
-
-@dataclass
-class CSRFFinding:
-    url: str
-    form_action: str
-    method: str
-    missing_token: bool
-    samesite_issue: bool
     confidence: str
+    proof_status: str = "proven"
+    trials_run: int = 1
+    successful_trials: int = 1
 
-
-# ===============================
-# Scan Result Aggregation
-# ===============================
 
 @dataclass
 class ScanResult:
+    # Общий результат запуска сканера.
     target: str
     pages_scanned: int
-    xss_findings: Optional[List[XSSFinding]] = None
     sqli_findings: Optional[List[SQLiFinding]] = None
-    csrf_findings: Optional[List[CSRFFinding]] = None
 
     def __post_init__(self):
-        if self.xss_findings is None:
-            self.xss_findings = []
         if self.sqli_findings is None:
             self.sqli_findings = []
-        if self.csrf_findings is None:
-            self.csrf_findings = []
 
-    def summary(self) -> Dict:
+    def summary(self) -> Dict[str, Any]:
         return {
             "target": self.target,
             "pages_scanned": self.pages_scanned,
-            "xss_count": len(self.xss_findings),
             "sqli_count": len(self.sqli_findings),
-            "csrf_count": len(self.csrf_findings),
         }

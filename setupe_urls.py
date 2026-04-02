@@ -1,13 +1,9 @@
-# state.py
+# setupe_urls.py
 
 from dataclasses import dataclass
 from typing import Set, Tuple
 from urllib.parse import urlparse, urlunparse
 
-
-# ===============================
-# Normalization Utilities
-# ===============================
 
 def normalize_url(url: str) -> str:
     """
@@ -28,7 +24,7 @@ def normalize_url(url: str) -> str:
 
 
 # ===============================
-# Scanner State
+# Настройка параметров сканирования
 # ===============================
 
 @dataclass
@@ -36,14 +32,14 @@ class ScannerState:
     max_pages: int
 
     def __post_init__(self):
-        self.visited_urls: Set[str] = set()
-        self.queued_urls: Set[str] = set()
-        self.tested_forms: Set[Tuple[str, str, str, str]] = set()
-        self.tested_params: Set[Tuple[str, str, str, str]] = set()
+        self.visited_urls = set()
+        self.queued_urls = set()
+        self.tested_forms = set()
+        self.tested_params = set()
         self.pages_scanned: int = 0
 
     # -------------------------------
-    # URL management
+    # URL управление потоком
     # -------------------------------
 
     def should_visit(self, url: str) -> bool:
@@ -70,8 +66,13 @@ class ScannerState:
         url = normalize_url(url)
         return url in self.queued_urls
 
+    def reset_crawl_tracking(self):
+        self.visited_urls.clear()
+        self.queued_urls.clear()
+        self.pages_scanned = 0
+
     # -------------------------------
-    # Form tracking
+    # Отслеживание форм
     # -------------------------------
 
     def is_form_tested(
@@ -89,13 +90,13 @@ class ScannerState:
         action: str,
         method: str,
         signature: str = "",
-        scope: str = "generic",
+        scope: str = "default",
     ):
         key = (normalize_url(action), method.upper(), signature, scope)
         self.tested_forms.add(key)
 
     # -------------------------------
-    # Parameter tracking
+    # параметры трекинга
     # -------------------------------
 
     def is_param_tested(
@@ -103,7 +104,7 @@ class ScannerState:
         url: str,
         method: str,
         param: str,
-        scope: str = "generic",
+        scope: str = "default",
     ) -> bool:
         key = (normalize_url(url), method.upper(), param, scope)
         return key in self.tested_params
@@ -113,7 +114,7 @@ class ScannerState:
         url: str,
         method: str,
         param: str,
-        scope: str = "generic",
+        scope: str = "default",
     ):
         key = (normalize_url(url), method.upper(), param, scope)
         self.tested_params.add(key)
