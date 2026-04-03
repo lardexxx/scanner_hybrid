@@ -16,7 +16,7 @@ from scanners.sqli_payloads import (
     select_error_checks_by_context,
     select_time_checks_by_context,
 )
-from state import ScannerState
+from setupe_urls import ScannerState
 from transport import Response, Transport
 
 # Сейчас sqli_scanner работает так (по этапам) в sqli_scanner.py:

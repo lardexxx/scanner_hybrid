@@ -18,17 +18,17 @@ from transport import Transport
 
 
 class StaticCrawler:
-    def __init__(self, config: ScannerConfig, transport: Transport, state: ScannerState):
+    def __init__(self, config: ScannerConfig, transport: Transport, setup_urls: ScannerState):
         self.config = config
         self.transport = transport
-        self.state = state
+        self.setup_urls = setup_urls
         self.base_domain = urlparse(config.target_url).netloc.lower()
 
     def crawl(self) -> List[Page]:
         # Статический обход собирает только то, что реально видно в HTML и URL.
         queue = deque([(self.config.target_url, 0)])
         pages: List[Page] = []
-        self.state.mark_queued(self.config.target_url)
+        self.setup_urls.mark_queued(self.config.target_url)
 
         while queue:
             url, depth = queue.popleft()
@@ -36,7 +36,7 @@ class StaticCrawler:
 
             if depth > self.config.crawler.max_depth:
                 continue
-            if not self.state.should_visit(normalized_url):
+            if not self.setup_urls.should_visit(normalized_url):
                 continue
 
             response = self.transport.request("GET", normalized_url)
@@ -47,7 +47,7 @@ class StaticCrawler:
                     print(f"[!] Static crawl HTTP {response.status_code}: {normalized_url}")
                 continue
 
-            self.state.mark_visited(normalized_url)
+            self.setup_urls.mark_visited(normalized_url)
             page = Page(
                 url=response.url,
                 status_code=response.status_code,
@@ -82,10 +82,10 @@ class StaticCrawler:
             for link in page.links:
                 if not self.should_follow(link):
                     continue
-                if self.state.is_queued(link):
+                if self.setup_urls.is_queued(link):
                     continue
                 queue.append((link, depth + 1))
-                self.state.mark_queued(link)
+                self.setup_urls.mark_queued(link)
 
         return pages
 

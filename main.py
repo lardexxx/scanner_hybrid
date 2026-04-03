@@ -12,7 +12,7 @@ def save_json_report(result, output_dir: str) -> str:
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%d.%M.%Y_%H.%M.%S")
     filename = out / f"scan_report_{timestamp}.json"
 
     data = asdict(result)
@@ -22,12 +22,12 @@ def save_json_report(result, output_dir: str) -> str:
     return str(filename)
 
 
-def print_summary(result):
-    summary = result.summary()
-    print("\n========== SCAN SUMMARY ==========")
-    print(f"Target:        {summary['target']}")
-    print(f"Pages scanned: {summary['pages_scanned']}")
-    print(f"SQLi findings: {summary['sqli_count']}")
+def print_short(result):
+    short = result.short()
+    print("\n========== SCAN short ==========")
+    print(f"Target:        {short['target']}")
+    print(f"Pages scanned: {short['pages_scanned']}")
+    print(f"SQLi findings: {short['sqli_count']}")
     print("==================================\n")
 
 
@@ -90,7 +90,7 @@ def main():
 
     try:
         result = scanner.run()
-        print_summary(result)
+        print_short(result)
         print_findings(result, show_evidence=args.show_evidence)
 
         report_path = save_json_report(result, args.report_dir)
